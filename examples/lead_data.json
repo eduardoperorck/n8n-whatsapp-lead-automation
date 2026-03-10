@@ -1,0 +1,25 @@
+{
+  "_description": "Exemplo de estrutura de lead qualificado, conforme armazenado no Google Sheets e enviado na notificação ao agente.",
+  "event": "new_qualified_lead",
+  "company": "Clínica Saúde Total",
+  "timestamp": "2026-03-09T14:32:00Z",
+  "lead": {
+    "whatsapp": "+5511999887766",
+    "name": "Maria Oliveira",
+    "contact_phone": "+5511999887766",
+    "service_interest": "Consulta Clínica Geral",
+    "budget": "Até R$ 300",
+    "timeline": "Esta semana, se possível"
+  },
+  "_sheets_row": {
+    "Timestamp": "2026-03-09T14:32:00Z",
+    "Empresa": "Clínica Saúde Total",
+    "WhatsApp": "+5511999887766",
+    "Nome": "Maria Oliveira",
+    "Telefone Contato": "+5511999887766",
+    "Servico Interesse": "Consulta Clínica Geral",
+    "Orcamento": "Até R$ 300",
+    "Prazo": "Esta semana, se possível",
+    "Status": "novo"
+  }
+}

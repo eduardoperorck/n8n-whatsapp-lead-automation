@@ -1,0 +1,6 @@
+{
+  "_description": "Payload de exemplo do formulário de configuração do cliente. Este é o input para generateWorkflow(config).",
+  "company_name": "Clínica Saúde Total",
+  "welcome_message": "Olá! Bem-vindo(a) à Clínica Saúde Total. Estamos aqui para cuidar da sua saúde! 💚",
+  "services": "Consulta Clínica Geral,Pediatria,Ginecologia,Ortopedia,Check-up Completo"
+}
