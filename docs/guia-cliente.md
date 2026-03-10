@@ -1,8 +1,11 @@
 # Seu bot de WhatsApp em 20 minutos
 
-Você recebeu dois itens:
+Quem configurou seu bot enviou para você (por e-mail, WhatsApp ou link de download) **três itens**:
 - **Arquivo `.json`** — o bot já configurado para a sua empresa
 - **Verify Token** — um código de texto (parece algo como `minha-empresa-ab12cd`)
+- **Link da planilha** — um link do Google Sheets que você vai duplicar para a sua conta
+
+> **Não encontrou algum desses itens?** Verifique sua caixa de e-mail, o WhatsApp ou o canal onde você comprou o produto. Se ainda assim não encontrar, entre em contato com quem vendeu o bot antes de continuar.
 
 Esse guia vai te levar do zero ao bot funcionando em cerca de 20 minutos. Não é necessário saber programação, mexer em terminal ou entender de tecnologia.
 
@@ -12,14 +15,9 @@ Esse guia vai te levar do zero ao bot funcionando em cerca de 20 minutos. Não �
 
 - [ ] O arquivo `.json` que você recebeu
 - [ ] O Verify Token que você recebeu
+- [ ] O link da planilha que você recebeu
 - [ ] Conta gratuita no **n8n** (veja como criar abaixo se ainda não tiver)
-- [ ] Conta no **Google** com uma planilha no Google Sheets
-
-> **Crie a planilha agora.** Abra o Google Sheets, crie uma planilha nova e coloque o nome que quiser. Na primeira linha, adicione esses títulos nas colunas (pode copiar e colar):
->
-> `Timestamp` | `Empresa` | `WhatsApp` | `Nome` | `Telefone Contato` | `Servico Interesse` | `Orcamento` | `Prazo` | `Status`
->
-> Renomeie a aba na parte de baixo para `Leads` (com L maiúsculo).
+- [ ] Conta no **Google** (Gmail serve)
 
 ---
 
@@ -47,20 +45,32 @@ Esse guia vai te levar do zero ao bot funcionando em cerca de 20 minutos. Não �
 
 ---
 
-## Passo 2 — Conectar sua planilha do Google Sheets
+## Passo 2 — Preparar e conectar a planilha do Google Sheets
 
-**Tempo estimado: 2 minutos**
+**Tempo estimado: 3 minutos**
 
-1. No diagrama, encontre o **bloco roxo** chamado "Lead Storage — Google Sheets" e clique duas vezes nele
-2. Uma janela vai abrir. Clique em **"Credential for Google Sheets API"**
-3. Clique em **"Create new credential"** (criar nova credencial)
-4. Clique em **"Sign in with Google"** (entrar com Google)
-5. Escolha a conta Google onde está a sua planilha
-6. Clique em **"Allow"** ou **"Permitir"** para autorizar
-7. Você voltará para o n8n. No campo **"Document"** (Documento), clique na seta e **escolha sua planilha** na lista
-8. No campo **"Sheet"** (Aba), selecione **Leads**
-9. Clique em **"Save"** (Salvar)
-10. Feche a janela clicando no X
+### 2a — Duplicar a planilha para a sua conta
+
+1. Abra o **link da planilha** que você recebeu
+2. No menu superior, clique em **Arquivo → Fazer uma cópia**
+3. Escolha um nome (pode deixar o padrão) e clique em **"Ok"**
+4. A planilha abre na sua conta Google, já com todos os cabeçalhos e a aba `Leads` prontos
+
+> **Funcionou quando:** a planilha abrir na sua conta Google com uma aba chamada `Leads` na parte de baixo.
+
+### 2b — Conectar a planilha ao bot no n8n
+
+1. Volte para o n8n
+2. No diagrama, encontre o **bloco roxo** chamado "Lead Storage — Google Sheets" e clique duas vezes nele
+3. Uma janela vai abrir. Clique em **"Credential for Google Sheets API"**
+4. Clique em **"Create new credential"** (criar nova credencial)
+5. Clique em **"Sign in with Google"** (entrar com Google)
+6. Escolha a mesma conta Google onde você copiou a planilha
+7. Clique em **"Allow"** ou **"Permitir"** para autorizar
+8. Você voltará para o n8n. No campo **"Document"** (Documento), clique na seta e **escolha a planilha** que você acabou de copiar
+9. No campo **"Sheet"** (Aba), selecione **Leads**
+10. Clique em **"Save"** (Salvar)
+11. Feche a janela clicando no X
 
 > **Funcionou quando:** o bloco roxo não mostrar mais um aviso em vermelho ou laranja, e os campos Document e Sheet estiverem preenchidos.
 

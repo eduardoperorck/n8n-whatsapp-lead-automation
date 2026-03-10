@@ -17,7 +17,20 @@ O cliente não precisa saber programar, instalar nada ou entender de APIs. Você
 
 Acesse [n8n.io](https://n8n.io) e crie uma conta gratuita. Você vai usar o n8n para gerar os workflows dos seus clientes.
 
-### 2. Importar o Configurador
+### 2. Criar a planilha-modelo para os clientes
+
+Crie uma planilha no Google Sheets com os cabeçalhos e a aba já prontos. Cada cliente vai duplicar essa planilha em vez de criar do zero — elimina erros de digitação.
+
+1. Acesse o Google Sheets e crie uma planilha nova
+2. Na primeira linha, adicione esses cabeçalhos (um por coluna):
+   `Timestamp` | `Empresa` | `WhatsApp` | `Nome` | `Telefone Contato` | `Servico Interesse` | `Orcamento` | `Prazo` | `Status`
+3. Renomeie a aba na parte de baixo para `Leads` (com L maiúsculo)
+4. No menu **Arquivo → Compartilhar → Publicar na web** — não, use: **Arquivo → Compartilhar** e defina "Qualquer pessoa com o link pode visualizar"
+5. Copie o link da planilha
+
+Guarde esse link. Você vai enviar para todos os seus clientes. Quando o cliente abrir, ele vai em **Arquivo → Fazer uma cópia** e a planilha cai direto na conta Google dele, já formatada.
+
+### 3. Importar o Configurador
 
 O workflow **Configurador** é a sua ferramenta de produção. Ele transforma as informações do cliente em um arquivo JSON pronto para entrega.
 
@@ -69,6 +82,7 @@ No node **"Resultado"** da execução, você verá:
 Envie para o cliente:
 - O arquivo `bot_nome-da-empresa.json`
 - O Verify Token (campo `3_verifyToken_para_webhook_Meta`)
+- O **link da planilha-modelo** (o cliente clica → Arquivo → Fazer uma cópia)
 - O arquivo `docs/guia-cliente.md` (o guia de instalação)
 
 O cliente só precisa fazer 4 coisas: importar o JSON, conectar o Google Sheets, ativar o bot e colar a URL do webhook no painel Meta. Nada de terminal, variáveis ou Google Cloud Console.
