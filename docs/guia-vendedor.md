@@ -34,15 +34,18 @@ Essa URL é permanente. Você vai usá-la para gerar todos os workflows dos seus
 
 ### 1. Coletar as informações do cliente
 
-Antes de gerar o workflow, você precisa de 3 informações simples:
+O formulário pede 5 campos obrigatórios + 1 opcional:
 
-| Informação | Exemplo |
-|---|---|
-| Nome da empresa | Clínica Saúde Total |
-| Mensagem de boas-vindas | Olá! Bem-vindo(a) à Clínica Saúde Total. Estamos aqui para cuidar da sua saúde! |
-| Serviços (separados por vírgula) | Consulta Clínica Geral,Pediatria,Ginecologia,Ortopedia |
+| Campo | Exemplo | Onde o cliente encontra |
+|---|---|---|
+| Nome da empresa | Clínica Saúde Total | — |
+| Mensagem de boas-vindas | Olá! Bem-vindo(a) à Clínica... | — |
+| Serviços (por vírgula) | Consulta,Pediatria,Ortopedia | — |
+| Phone Number ID | 1234567890123456 | Meta → seu app → WhatsApp → API Setup |
+| Access Token | EAAG... | Mesma página do Phone Number ID |
+| URL de notificação | https://hooks.slack.com/... | Opcional — Slack, Discord, etc. |
 
-Você pode coletar isso via formulário de venda, WhatsApp ou e-mail.
+Você pode coletar essas informações via formulário de venda, WhatsApp ou e-mail e preencher você mesmo — ou compartilhar o link do formulário direto com o cliente para ele preencher.
 
 ### 2. Gerar o workflow
 
@@ -56,8 +59,14 @@ Você pode coletar isso via formulário de venda, WhatsApp ou e-mail.
 
 ### 3. Entregar ao cliente
 
+No node **"Resultado"** da execução, você verá:
+- `2_arquivo` — nome sugerido para o arquivo (ex: `bot_clinica-saude-total-abc123.json`)
+- `3_verifyToken_para_webhook_Meta` — o código que o cliente vai usar na configuração do webhook
+- `5_workflowJson` — o JSON completo do bot (copie e salve como `.json`)
+
 Envie para o cliente:
 - O arquivo `bot_nome-da-empresa.json`
+- O Verify Token (campo `3_verifyToken_para_webhook_Meta`)
 - O arquivo `docs/guia-cliente.md` (o guia de instalação)
 
 O cliente segue o guia e em 30 minutos o bot está funcionando.
