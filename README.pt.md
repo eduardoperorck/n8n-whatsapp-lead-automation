@@ -1,4 +1,4 @@
-> [🇧🇷 Português](README.pt.md) | 🇺🇸 English
+> 🇧🇷 Português | [🇺🇸 English](README.md)
 
 # n8n WhatsApp Lead Automation
 
@@ -74,20 +74,19 @@ O Configurador gera `${slug}-${random}` como verify token para cada cliente, exp
 ```
 n8n-whatsapp-lead-automation/
 ├── workflows/
-│   ├── template/           ← Template base do workflow (whatsapp_lead_template.json)
+│   ├── template/           ← Template base do workflow
 │   ├── examples/           ← Exemplos prontos: clínica, restaurante
-│   └── setup/              ← Configurador (gerador de workflows via formulário)
+│   └── setup/              ← Configurador (gerador via formulário)
 ├── generator/              ← generateWorkflow.js — geração via CLI
 ├── scripts/                ← configurar.sh, deployWorkflow.sh, importWorkflow.sh
 ├── tests/                  ← Testes automatizados
-├── contents/               ← Delivery artifacts (client guides, FAQ, blueprint, templates)
-├── package/                ← Operational checklists for each client delivery
+├── contents/               ← Artefatos de entrega ao cliente (guias, FAQ)
 ├── docs/
-│   ├── architecture.md
-│   ├── workflow-logic.md
-│   ├── product-overview.md
+│   ├── architecture.md / architecture.pt.md
+│   ├── workflow-logic.md / workflow-logic.pt.md
+│   ├── product-overview.md / product-overview.pt.md
 │   ├── operational.md / operational.pt.md
-│   └── development-diary/  ← Log de sprints e decisões arquiteturais
+│   └── development-diary/
 └── .env.example
 ```
 
@@ -117,11 +116,11 @@ Para uso completo com n8n, importe o arquivo gerado em `workflows/production/` d
 
 | Documento | Conteúdo |
 |---|---|
-| [architecture.md](docs/architecture.md) | Nodes, data flow, integrations |
-| [workflow-logic.md](docs/workflow-logic.md) | State machine, session, qualification |
-| [product-overview.md](docs/product-overview.md) | Product vision and business context |
-| [operational.md](docs/operational.md) | How to generate and deliver bots to clients |
-| [development-diary/](docs/development-diary/) | Sprint logs and architectural decisions |
+| [architecture.pt.md](docs/architecture.pt.md) | Nodes, fluxo de dados, integrações |
+| [workflow-logic.pt.md](docs/workflow-logic.pt.md) | Máquina de estados, sessão, qualificação |
+| [product-overview.pt.md](docs/product-overview.pt.md) | Visão do produto e contexto |
+| [operational.pt.md](docs/operational.pt.md) | Como gerar e entregar bots para clientes |
+| [development-diary/](docs/development-diary/) | Log de sprints e decisões |
 
 ---
 

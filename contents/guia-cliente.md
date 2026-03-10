@@ -1,3 +1,5 @@
+> 🇧🇷 Português | [🇺🇸 English](guia-cliente.en.md)
+
 # Seu bot de WhatsApp em 20 minutos
 
 Quem configurou seu bot enviou para você (por e-mail, WhatsApp ou link de download) **três itens**:

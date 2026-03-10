@@ -1,111 +1,113 @@
-# Lógica do Workflow — n8n WhatsApp Lead Automation
+> [🇧🇷 Português](workflow-logic.pt.md) | 🇺🇸 English
 
-## Máquina de Estados da Conversa
+# Workflow Logic — n8n WhatsApp Lead Automation
 
-Cada usuário (identificado pelo número de telefone `from`) possui um estado de conversa:
+## Conversation State Machine
+
+Each user (identified by the phone number `from`) has a conversation state:
 
 ```
 IDLE → GREETING_SENT → Q1 → Q2 → Q3 → Q4 → Q5 → COMPLETE
 ```
 
-| Estado | Descrição |
+| State | Description |
 |---|---|
-| `IDLE` | Nenhuma interação anterior ou sessão expirada |
-| `GREETING_SENT` | Boas-vindas enviadas, aguardando primeira resposta |
-| `Q1` | Aguardando nome |
-| `Q2` | Aguardando telefone de contato |
-| `Q3` | Aguardando serviço de interesse |
-| `Q4` | Aguardando orçamento |
-| `Q5` | Aguardando prazo |
-| `COMPLETE` | Qualificação concluída |
+| `IDLE` | No previous interaction or expired session |
+| `GREETING_SENT` | Welcome sent, waiting for first response |
+| `Q1` | Waiting for name |
+| `Q2` | Waiting for contact phone |
+| `Q3` | Waiting for service of interest |
+| `Q4` | Waiting for budget |
+| `Q5` | Waiting for timeline |
+| `COMPLETE` | Qualification completed |
 
-## Timeout de Sessão
+## Session Timeout
 
-- Inatividade > 30 minutos → estado resetado para `IDLE`
-- Na próxima mensagem, o fluxo começa do zero
+- Inactivity > 30 minutes → state reset to `IDLE`
+- On the next message, the flow starts from scratch
 
-## Perguntas de Qualificação
+## Qualification Questions
 
-As perguntas são configuradas no node **Lead Qualification** e podem ser alteradas diretamente no n8n sem re-deploy:
+Questions are configured in the **Lead Qualification** node and can be edited directly in n8n without re-deploying:
 
 ```
-Q1: "Qual é o seu nome completo?"
-Q2: "Qual o melhor número para contato? (pode ser este mesmo)"
-Q3: "Qual serviço você tem interesse? Opções: {{services}}"
-Q4: "Qual seu orçamento aproximado para este serviço?"
-Q5: "Quando você gostaria de começar?"
+Q1: "What is your full name?"
+Q2: "What is the best phone number to reach you? (this one is fine)"
+Q3: "Which service are you interested in? Options: {{services}}"
+Q4: "What is your approximate budget for this service?"
+Q5: "When would you like to get started?"
 ```
 
-## Roteamento de Intenções
+## Intent Routing
 
-O **Intent Router** avalia o estado atual + conteúdo da mensagem:
+The **Intent Router** evaluates the current state + message content:
 
 ```javascript
-// Pseudocódigo do roteamento
+// Routing pseudocode
 if (session.state === 'IDLE' || isGreeting(text)) {
-  → fluxo GREETING
+  → GREETING flow
 } else if (session.state in ['Q1', 'Q2', 'Q3', 'Q4', 'Q5']) {
-  → fluxo QUALIFYING (salva resposta, avança estado)
+  → QUALIFYING flow (saves answer, advances state)
 } else if (session.state === 'COMPLETE') {
-  → fluxo COMPLETE (storage + notificação)
+  → COMPLETE flow (storage + notification)
 } else {
-  → fluxo UNKNOWN (mensagem de ajuda)
+  → UNKNOWN flow (help message)
 }
 ```
 
-## Detecção de Saudação
+## Greeting Detection
 
-Palavras que ativam o fluxo de boas-vindas:
+Words that trigger the welcome flow:
 
 ```
 oi, olá, ola, hello, hi, bom dia, boa tarde, boa noite,
 início, inicio, começar, comecar, start, menu
 ```
 
-## Mensagens do Sistema
+## System Messages
 
-### Boas-vindas
+### Welcome
 ```
-Olá! {{welcome_message}}
+Hello! {{welcome_message}}
 
-Nossos serviços: {{services}}
+Our services: {{services}}
 
-Para começar, me diga: qual é o seu nome completo?
-```
-
-### Tipo de Mensagem Inválido
-```
-Desculpe, no momento só consigo processar mensagens de texto.
-Por favor, envie sua dúvida em texto. 😊
+To get started, please tell me: what is your full name?
 ```
 
-### Conclusão da Qualificação
+### Unsupported Message Type
 ```
-Perfeito, [nome]! Recebi todas as suas informações.
-Nossa equipe entrará em contato em breve pelo número [telefone].
-Até logo! 👋
-```
-
-### Fallback (intent desconhecida)
-```
-Não entendi sua mensagem. Digite *menu* para ver as opções disponíveis.
+Sorry, I can only process text messages at the moment.
+Please send your question as text. 😊
 ```
 
-## Estrutura do Lead no Google Sheets
+### Qualification Complete
+```
+Great, [name]! I've received all your information.
+Our team will contact you shortly at [phone].
+Talk soon! 👋
+```
 
-| Campo | Origem |
+### Fallback (unknown intent)
+```
+I didn't understand your message. Type *menu* to see the available options.
+```
+
+## Lead Structure in Google Sheets
+
+| Field | Source |
 |---|---|
 | Timestamp | `new Date().toISOString()` |
-| Empresa | `{{company_name}}` (fixo no template) |
+| Empresa | `{{company_name}}` (static in template) |
 | WhatsApp | `message.from` |
-| Nome | Resposta Q1 |
-| Telefone Contato | Resposta Q2 |
-| Serviço Interesse | Resposta Q3 |
-| Orçamento | Resposta Q4 |
-| Prazo | Resposta Q5 |
-| Status | `"novo"` (padrão) |
+| Nome | Q1 answer |
+| Telefone Contato | Q2 answer |
+| Servico Interesse | Q3 answer |
+| Orcamento | Q4 answer |
+| Prazo | Q5 answer |
+| Status | `"novo"` (default) |
 
-## Payload de Notificação ao Agente
+## Agent Notification Payload
 
 ```json
 {
@@ -116,9 +118,9 @@ Não entendi sua mensagem. Digite *menu* para ver as opções disponíveis.
     "whatsapp": "+5511999999999",
     "name": "João Silva",
     "contact_phone": "+5511888888888",
-    "service_interest": "Consulta Clínica Geral",
-    "budget": "R$ 300 a R$ 500",
-    "timeline": "Esta semana"
+    "service_interest": "General Consultation",
+    "budget": "R$ 300 to R$ 500",
+    "timeline": "This week"
   }
 }
 ```

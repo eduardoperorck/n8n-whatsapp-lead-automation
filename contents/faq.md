@@ -1,3 +1,5 @@
+> 🇧🇷 Português | [🇺🇸 English](faq.en.md)
+
 # Perguntas Frequentes
 ## WhatsApp Lead Automation
 

@@ -1,151 +1,153 @@
-# Arquitetura — n8n WhatsApp Lead Automation
+> [🇧🇷 Português](architecture.pt.md) | 🇺🇸 English
 
-## Visão Geral
+# Architecture — n8n WhatsApp Lead Automation
 
-O sistema é composto por três camadas:
+## Overview
+
+The system is composed of three layers:
 
 ```
 ┌──────────────────────────────────────────────┐
-│              CAMADA DE ENTRADA               │
+│                 INPUT LAYER                  │
 │  WhatsApp Business API → n8n Webhook         │
 └──────────────────────────┬───────────────────┘
                            ↓
 ┌──────────────────────────────────────────────┐
-│           CAMADA DE PROCESSAMENTO            │
+│              PROCESSING LAYER                │
 │  Message Parser → Intent Router              │
 │  Lead Qualification State Machine            │
 └──────────────────────────┬───────────────────┘
                            ↓
 ┌──────────────────────────────────────────────┐
-│             CAMADA DE SAÍDA                  │
+│                OUTPUT LAYER                  │
 │  Google Sheets Storage + Agent Notification  │
 └──────────────────────────────────────────────┘
 ```
 
 ---
 
-## Pipeline Canônico de Nodes
+## Node Pipeline
 
 ### 1. WhatsApp Webhook (Trigger)
 **Node:** `n8n-nodes-base.webhook`
 
-- Expõe endpoint `POST /webhook/whatsapp`
-- Expõe endpoint `GET /webhook/whatsapp` para verificação Meta
-- Valida `hub.verify_token` no GET
-- Retorna `hub.challenge` para confirmar o webhook
+- Exposes `POST /webhook/whatsapp` endpoint
+- Exposes `GET /webhook/whatsapp` for Meta webhook verification
+- Validates `hub.verify_token` on GET
+- Returns `hub.challenge` to confirm the webhook
 
-**Resiliência:**
-- Responde `200 OK` imediatamente antes de processar (evita retry do WhatsApp)
-- Timeout configurado para 30s
+**Resilience:**
+- Responds `200 OK` immediately before processing (prevents WhatsApp retry)
+- Timeout set to 30s
 
 ---
 
 ### 2. Method Router (IF)
 **Node:** `n8n-nodes-base.if`
 
-- `GET` → fluxo de verificação de webhook
-- `POST` → fluxo principal de processamento
+- `GET` → webhook verification flow
+- `POST` → main processing flow
 
 ---
 
 ### 3. Message Parser (Code)
 **Node:** `n8n-nodes-base.code`
 
-Extrai e valida a mensagem recebida.
+Extracts and validates the incoming message.
 
-**Validações:**
-- Tamanho máximo do payload: 64KB
-- Tipo de mensagem: apenas `text` é processado
-- Estrutura obrigatória: `entry[0].changes[0].value.messages[0]`
+**Validations:**
+- Max payload size: 64KB
+- Message type: only `text` is processed
+- Required structure: `entry[0].changes[0].value.messages[0]`
 
 **Fallbacks:**
-| Situação | Resposta |
+| Situation | Response |
 |---|---|
-| Payload > 64KB | Log + descarte silencioso |
-| Tipo `audio` | "Desculpe, só aceito mensagens de texto" |
-| Tipo `image` | "Desculpe, só aceito mensagens de texto" |
-| JSON malformado | Log + `200 OK` silencioso (evita retry loop) |
-| Texto vazio | Ignora silenciosamente |
+| Payload > 64KB | Silent log + discard |
+| Type `audio` | "Sorry, I only accept text messages" |
+| Type `image` | "Sorry, I only accept text messages" |
+| Malformed JSON | Silent log + `200 OK` (prevents retry loop) |
+| Empty text | Silently ignored |
 
 ---
 
 ### 4. Intent Router (Switch)
 **Node:** `n8n-nodes-base.switch`
 
-Roteia baseado no estado da conversa do usuário:
+Routes based on the user's conversation state:
 
-| Intenção | Condição | Destino |
+| Intent | Condition | Destination |
 |---|---|---|
-| `greeting` | Primeira mensagem / reset | Envio de boas-vindas |
-| `qualifying` | Qualificação em andamento | Continua Q&A |
-| `complete` | Todas as perguntas respondidas | Storage + Notificação |
-| `unknown` | Fallback | Mensagem de ajuda |
+| `greeting` | First message / reset | Welcome message |
+| `qualifying` | Qualification in progress | Continues Q&A |
+| `complete` | All questions answered | Storage + Notification |
+| `unknown` | Fallback | Help message |
 
-O estado da conversa é rastreado via número de telefone (`from`) como chave.
+Conversation state is tracked using the phone number (`from`) as key.
 
 ---
 
 ### 5. Lead Qualification (Code)
 **Node:** `n8n-nodes-base.code`
 
-Máquina de estados da qualificação. Perguntas configuráveis:
+State machine for lead qualification. Configurable questions:
 
-1. Nome completo
-2. Melhor telefone para contato
-3. Serviço de interesse (`{{services}}`)
-4. Orçamento aproximado
-5. Prazo para início
+1. Full name
+2. Best phone number for contact
+3. Service of interest (`{{services}}`)
+4. Approximate budget
+5. Start timeline
 
-**Resiliência:**
-- Resposta fora do esperado → repete a pergunta com instrução
-- Timeout de sessão: 30 minutos de inatividade redefine o estado
+**Resilience:**
+- Unexpected response → repeats the question with guidance
+- Session timeout: 30 minutes of inactivity resets the state
 
 ---
 
 ### 6. Send WhatsApp Message (HTTP Request)
 **Node:** `n8n-nodes-base.httpRequest`
 
-Envia mensagem de texto via WhatsApp Business API.
+Sends a text message via WhatsApp Business API.
 
-**Resiliência:**
-- Retry automático: 3 tentativas com backoff exponencial (1s, 2s, 4s)
-- Rate limit: respeita limite de 80 msg/s da API
-- Timeout: 10s por requisição
-- Erro 429 (rate limit): espera o `Retry-After` header
+**Resilience:**
+- Auto-retry: 3 attempts with exponential backoff (1s, 2s, 4s)
+- Rate limit: respects the 80 msg/s API limit
+- Timeout: 10s per request
+- HTTP 429 (rate limit): waits for `Retry-After` header
 
 ---
 
 ### 7. Lead Storage (Google Sheets)
 **Node:** `n8n-nodes-base.googleSheets`
 
-Appends o lead qualificado na planilha.
+Appends the qualified lead to the spreadsheet.
 
-**Colunas:**
-| Coluna | Descrição |
+**Columns:**
+| Column | Description |
 |---|---|
-| Timestamp | Data/hora do preenchimento |
+| Timestamp | Date/time of submission |
 | Empresa | `{{company_name}}` |
-| Telefone | Número WhatsApp |
-| Nome | Nome informado |
-| Telefone Contato | Telefone alternativo |
-| Serviço Interesse | Serviço selecionado |
-| Orçamento | Valor informado |
-| Prazo | Prazo informado |
+| WhatsApp | WhatsApp number |
+| Nome | Provided name |
+| Telefone Contato | Alternative phone |
+| Servico Interesse | Selected service |
+| Orcamento | Provided budget |
+| Prazo | Provided timeline |
 | Status | `novo` |
 
-**Resiliência:**
-- Retry: 3 tentativas com jitter aleatório (evita thundering herd)
-- Quota Google: 100 req/100s → fila local se necessário
-- Dado não salvo: log de erro + notificação ao agente com dados brutos
+**Resilience:**
+- Retry: 3 attempts with random jitter (prevents thundering herd)
+- Google quota: 100 req/100s → local queue if needed
+- Unsaved data: error log + agent notification with raw data
 
 ---
 
 ### 8. Agent Notification (HTTP Request)
 **Node:** `n8n-nodes-base.httpRequest`
 
-Dispara webhook de notificação (Slack, endpoint custom, etc.).
+Fires a notification webhook (Slack, custom endpoint, etc.).
 
-**Payload enviado:**
+**Payload:**
 ```json
 {
   "company": "{{company_name}}",
@@ -154,26 +156,26 @@ Dispara webhook de notificação (Slack, endpoint custom, etc.).
     "name": "João Silva",
     "service": "Consulta",
     "budget": "R$ 500",
-    "timeline": "Próxima semana"
+    "timeline": "Next week"
   },
   "timestamp": "2026-03-09T10:00:00Z"
 }
 ```
 
-**Resiliência:**
-- Retry: 2 tentativas
-- Falha na notificação: NÃO bloqueia o fluxo — lead já está salvo no Sheets
+**Resilience:**
+- Retry: 2 attempts
+- Notification failure: does NOT block the flow — lead is already saved in Sheets
 
 ---
 
-## Fluxo de Dados Completo
+## Full Data Flow
 
 ```
 [WhatsApp User]
     │ POST /webhook/whatsapp
     ↓
 [Webhook Node]
-    │ extrai body raw
+    │ extracts raw body
     ↓
 [Method Router]
     ├─ GET → [Verify Challenge] → [Respond 200 + challenge]
@@ -197,9 +199,9 @@ Dispara webhook de notificação (Slack, endpoint custom, etc.).
 
 ---
 
-## Considerações de Segurança
+## Security Considerations
 
-- **Verify Token:** validado no handshake inicial do webhook Meta
-- **No hardcoded secrets:** todas as credenciais via n8n Credentials ou env vars
-- **Input sanitization:** Message Parser rejeita payloads malformados antes de qualquer processamento
-- **Response sempre 200:** o WhatsApp re-envia mensagens para qualquer status != 200, criando loops — sempre retornamos 200 mesmo em erro interno
+- **Verify Token:** validated on the Meta webhook initial handshake
+- **No hardcoded secrets:** all credentials via n8n Credentials or env vars
+- **Input sanitization:** Message Parser rejects malformed payloads before any processing
+- **Always 200 response:** WhatsApp retries any status != 200, creating loops — we always return 200 even on internal errors
