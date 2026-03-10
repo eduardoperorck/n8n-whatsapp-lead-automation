@@ -328,13 +328,16 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "={{$env.GOOGLE_SHEETS_SPREADSHEET_ID}}",
-          "mode": "id"
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
         },
         "sheetName": {
           "__rl": true,
-          "value": "={{$env.GOOGLE_SHEETS_SHEET_NAME || \"Leads\"}}",
-          "mode": "name"
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -360,7 +363,13 @@
       "name": "Lead Storage — Google Sheets",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1780, 680]
+      "position": [1780, 680],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_OAUTH2_PLACEHOLDER",
+          "name": "Google Sheets (clique para conectar)"
+        }
+      }
     },
     {
       "parameters": {
