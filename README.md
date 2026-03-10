@@ -8,7 +8,7 @@
 
 ### Sou cliente (comprei o produto e recebi um arquivo JSON)
 
-Siga o guia de instalação de 30 minutos — sem terminal, sem programação:
+Siga o guia de instalação de 20 minutos — sem terminal, sem programação:
 
 **[docs/guia-cliente.md](docs/guia-cliente.md)**
 

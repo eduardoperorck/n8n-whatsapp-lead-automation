@@ -2,81 +2,131 @@
 
 Você recebeu dois itens:
 - **Arquivo `.json`** — o bot já configurado para a sua empresa
-- **Verify Token** — um código que você vai usar em um passo abaixo
+- **Verify Token** — um código de texto (parece algo como `minha-empresa-ab12cd`)
 
-Agora é só instalar. Não precisa de programação, terminal ou configuração técnica.
-
----
-
-## O que você vai precisar
-
-- [ ] O arquivo `.json` recebido
-- [ ] O Verify Token recebido (um código de texto)
-- [ ] Conta no **n8n Cloud** — crie grátis em [n8n.io](https://n8n.io) se ainda não tiver
-- [ ] Uma planilha no **Google Sheets** com uma aba chamada `Leads`
-
-> **Dica:** Crie a planilha agora antes de começar. Adicione na primeira linha os cabeçalhos:
-> `Timestamp | Empresa | WhatsApp | Nome | Telefone Contato | Servico Interesse | Orcamento | Prazo | Status`
+Esse guia vai te levar do zero ao bot funcionando em cerca de 20 minutos. Não é necessário saber programação, mexer em terminal ou entender de tecnologia.
 
 ---
 
-## Passo 1 — Importar o bot no n8n (2 minutos)
+## Antes de começar — o que você vai precisar
 
-1. Acesse seu **n8n** e faça login
-2. No menu lateral, clique em **"Workflows"**
-3. Clique em **"Add workflow"** → **"Import from file"**
+- [ ] O arquivo `.json` que você recebeu
+- [ ] O Verify Token que você recebeu
+- [ ] Conta gratuita no **n8n** (veja como criar abaixo se ainda não tiver)
+- [ ] Conta no **Google** com uma planilha no Google Sheets
+
+> **Crie a planilha agora.** Abra o Google Sheets, crie uma planilha nova e coloque o nome que quiser. Na primeira linha, adicione esses títulos nas colunas (pode copiar e colar):
+>
+> `Timestamp` | `Empresa` | `WhatsApp` | `Nome` | `Telefone Contato` | `Servico Interesse` | `Orcamento` | `Prazo` | `Status`
+>
+> Renomeie a aba na parte de baixo para `Leads` (com L maiúsculo).
+
+---
+
+## Criando sua conta no n8n (pule se já tiver)
+
+1. Acesse **n8n.io** no seu navegador
+2. Clique em **"Get started for free"**
+3. Preencha seu e-mail e crie uma senha
+4. Confirme o e-mail se pedir
+5. Quando entrar, você verá a tela principal com um menu lateral — isso é o n8n
+
+---
+
+## Passo 1 — Importar o bot no n8n
+
+**Tempo estimado: 2 minutos**
+
+1. No menu do lado esquerdo, clique em **"Workflows"**
+2. Clique no botão **"Add workflow"**
+3. No menu que aparece, clique em **"Import from file"** (ou "Importar do arquivo")
 4. Selecione o arquivo `.json` que você recebeu
-5. O workflow aparece com o nome da sua empresa e todos os campos já preenchidos
+5. O bot aparece na tela com o nome da sua empresa e todos os campos já preenchidos
+
+> **Funcionou quando:** você conseguir ver um diagrama com vários blocos coloridos conectados com linhas, com o nome da sua empresa no canto superior esquerdo.
 
 ---
 
-## Passo 2 — Conectar o Google Sheets (1 minuto)
+## Passo 2 — Conectar sua planilha do Google Sheets
 
-1. No workflow aberto, clique duas vezes no node roxo **"Lead Storage — Google Sheets"**
-2. Clique em **"Credential for Google Sheets API"** → **"Create new credential"**
-3. Clique em **"Sign in with Google"** e autorize com a conta Google onde está sua planilha
-4. No campo **"Document"**, selecione sua planilha na lista
-5. No campo **"Sheet"**, selecione a aba **Leads**
-6. Clique em **"Save"**
+**Tempo estimado: 2 minutos**
+
+1. No diagrama, encontre o **bloco roxo** chamado "Lead Storage — Google Sheets" e clique duas vezes nele
+2. Uma janela vai abrir. Clique em **"Credential for Google Sheets API"**
+3. Clique em **"Create new credential"** (criar nova credencial)
+4. Clique em **"Sign in with Google"** (entrar com Google)
+5. Escolha a conta Google onde está a sua planilha
+6. Clique em **"Allow"** ou **"Permitir"** para autorizar
+7. Você voltará para o n8n. No campo **"Document"** (Documento), clique na seta e **escolha sua planilha** na lista
+8. No campo **"Sheet"** (Aba), selecione **Leads**
+9. Clique em **"Save"** (Salvar)
+10. Feche a janela clicando no X
+
+> **Funcionou quando:** o bloco roxo não mostrar mais um aviso em vermelho ou laranja, e os campos Document e Sheet estiverem preenchidos.
 
 ---
 
-## Passo 3 — Ativar o workflow (1 clique)
+## Passo 3 — Ativar o bot
 
-1. No canto superior direito do workflow, clique no **toggle** (o botão liga/desliga)
-2. Ele ficará **verde** — o bot está ativo
-3. Clique no node **"WhatsApp Webhook"** e copie a **URL do Webhook** que aparece
+**Tempo estimado: 1 minuto**
+
+1. No canto superior direito da tela, localize o **botão de ativar** (um interruptor pequeno ao lado de "Inactive" ou "Ativo")
+2. Clique nele — ele ficará **verde** e vai mostrar "Active"
+3. Agora clique duas vezes no **bloco laranja** chamado "WhatsApp Webhook" (primeiro bloco do diagrama)
+4. Uma janela vai abrir mostrando a **URL do Webhook** — um endereço longo começando com `https://`
+5. Clique no botão de copiar ao lado da URL ou selecione tudo e copie (Ctrl+C)
+6. **Guarde esse endereço** — você vai usar no próximo passo
+
+> **Funcionou quando:** o interruptor estiver verde mostrando "Active" e você tiver copiado a URL do Webhook.
 
 ---
 
-## Passo 4 — Configurar o Webhook no painel Meta (5 minutos)
+## Passo 4 — Configurar o webhook no painel Meta
 
-1. Acesse **developers.facebook.com** → seu app → **WhatsApp → Configuration → Webhook → Edit**
-2. No campo **"Callback URL"**, cole a URL do webhook que você copiou no passo anterior
-3. No campo **"Verify token"**, cole o **Verify Token** que você recebeu junto com este guia
-4. Clique em **"Verify and Save"**
-5. Em **"Webhook fields"**, marque **"messages"** e clique em **"Subscribe"**
+**Tempo estimado: 5 minutos**
+
+Esse é o passo que conecta o WhatsApp ao seu bot. Você vai fazer isso no painel de desenvolvedor da Meta (mesma empresa do WhatsApp e Facebook).
+
+1. Acesse **developers.facebook.com** e faça login com o Facebook da sua empresa
+2. No menu superior, clique em **"My Apps"** (Meus apps) e abra o app do seu WhatsApp
+3. No menu do lado esquerdo, clique em **WhatsApp** → **Configuration** (Configuração)
+4. Role a página até encontrar a seção **"Webhook"**
+5. Clique no botão **"Edit"** (Editar)
+6. No campo **"Callback URL"**, cole a URL do Webhook que você copiou no passo anterior
+7. No campo **"Verify token"**, cole o **Verify Token** que você recebeu junto com este guia
+8. Clique em **"Verify and Save"** (Verificar e Salvar)
+9. Apareceu **"Verified"** (Verificado) ao lado do webhook? Perfeito.
+10. Role um pouco mais para baixo até ver **"Webhook fields"**
+11. Encontre a linha **"messages"** e clique em **"Subscribe"** (Inscrever)
+
+> **Funcionou quando:** aparecer "Verified" na seção do webhook e "messages" aparecer como inscrito (com um ícone verde).
 
 ---
 
 ## Teste final
 
-Mande **"Oi"** para o número do WhatsApp configurado no seu app Meta.
+Mande **"Oi"** para o número de WhatsApp que está conectado no seu app Meta.
 
-Em alguns segundos o bot responde com a mensagem de boas-vindas e começa a fazer as perguntas. Ao final, verifique se os dados apareceram na sua planilha.
+Em alguns segundos, o bot deve responder com a mensagem de boas-vindas da sua empresa e começar a fazer as perguntas. Quando chegar ao final da conversa, abra sua planilha e veja se os dados apareceram.
+
+> **Bot funcionando =** mensagem recebida + dados na planilha ao final da conversa.
 
 ---
 
 ## Algo deu errado?
 
-**Bot não respondeu:**
-- O workflow está ativo (toggle verde)?
-- A URL do webhook foi colada corretamente no painel Meta?
-- O Verify Token foi aceito (aparece "Verified" no painel Meta)?
+**Bot não respondeu nada:**
+- O interruptor está verde (Active) no n8n?
+- A URL do Webhook foi colada corretamente no campo "Callback URL" do painel Meta?
+- Apareceu "Verified" depois de clicar em "Verify and Save"?
+- O "messages" está com Subscribe ativado?
 
-**Dados não aparecem na planilha:**
-- O cliente completou **todas** as perguntas do bot? (só salva ao finalizar)
-- A aba da planilha se chama exatamente `Leads` (com L maiúsculo)?
-- A credencial Google Sheets está conectada no node roxo?
+**Responde mas os dados não aparecem na planilha:**
+- Você completou **todas** as perguntas do bot? (os dados só são salvos quando a conversa chega ao fim)
+- A aba da planilha se chama exatamente `Leads` com L maiúsculo?
+- O bloco roxo no n8n está sem alertas em vermelho ou laranja?
 
-**Ainda com dúvidas?** Entre em contato com quem configurou seu bot.
+**O bot demorou para responder e depois parou:**
+- Normal — a conversa expira após 30 minutos sem resposta. Mande outra mensagem para reiniciar do zero.
+
+**Ainda com dúvidas?** Entre em contato com quem configurou seu bot e informe qual passo deu problema.

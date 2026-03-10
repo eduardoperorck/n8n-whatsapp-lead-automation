@@ -5,7 +5,7 @@
 
 ## O modelo de negócio em uma linha
 
-**Você personaliza → gera um JSON → entrega ao cliente → cliente instala em 30 minutos.**
+**Você personaliza → gera um JSON → entrega ao cliente → cliente instala em 20 minutos.**
 
 O cliente não precisa saber programar, instalar nada ou entender de APIs. Você faz a parte técnica em 2 minutos; ele faz a parte de instalar seguindo o guia.
 
@@ -36,14 +36,16 @@ Essa URL é permanente. Você vai usá-la para gerar todos os workflows dos seus
 
 O formulário pede 5 campos obrigatórios + 1 opcional:
 
-| Campo | Exemplo | Onde o cliente encontra |
+| Campo | Exemplo | Onde encontrar |
 |---|---|---|
 | Nome da empresa | Clínica Saúde Total | — |
 | Mensagem de boas-vindas | Olá! Bem-vindo(a) à Clínica... | — |
 | Serviços (por vírgula) | Consulta,Pediatria,Ortopedia | — |
 | Phone Number ID | 1234567890123456 | Meta → seu app → WhatsApp → API Setup |
 | Access Token | EAAG... | Mesma página do Phone Number ID |
-| URL de notificação | https://hooks.slack.com/... | Opcional — Slack, Discord, etc. |
+| URL de notificação | https://hooks.slack.com/... | Opcional — Slack, Discord, webhook |
+
+> **Importante:** o Phone Number ID e o Access Token são embutidos diretamente no JSON gerado. O cliente **não** precisa configurar nenhuma variável de ambiente — basta importar o JSON e seguir o guia.
 
 Você pode coletar essas informações via formulário de venda, WhatsApp ou e-mail e preencher você mesmo — ou compartilhar o link do formulário direto com o cliente para ele preencher.
 
@@ -69,7 +71,9 @@ Envie para o cliente:
 - O Verify Token (campo `3_verifyToken_para_webhook_Meta`)
 - O arquivo `docs/guia-cliente.md` (o guia de instalação)
 
-O cliente segue o guia e em 30 minutos o bot está funcionando.
+O cliente só precisa fazer 4 coisas: importar o JSON, conectar o Google Sheets, ativar o bot e colar a URL do webhook no painel Meta. Nada de terminal, variáveis ou Google Cloud Console.
+
+O cliente segue o guia e em 20 minutos o bot está funcionando.
 
 ---
 
