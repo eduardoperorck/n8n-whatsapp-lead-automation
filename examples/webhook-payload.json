@@ -1,0 +1,106 @@
+{
+  "_description": "Example WhatsApp Business API webhook payload — POST request received by the n8n Webhook node when a user sends a text message. This is the raw JSON that Meta's servers send to your webhook URL. The n8n Message Parser node extracts: contacts[0].wa_id (sender phone), contacts[0].profile.name (sender name), messages[0].text.body (message content), messages[0].id (message ID for reply), and metadata.phone_number_id (your WhatsApp phone number ID, required for sending replies).",
+
+  "object": "whatsapp_business_account",
+
+  "entry": [
+    {
+      "id": "WHATSAPP_BUSINESS_ACCOUNT_ID",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15550000001",
+              "phone_number_id": "1234567890123456"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "João Silva"
+                },
+                "wa_id": "5511999887766"
+              }
+            ],
+            "messages": [
+              {
+                "from": "5511999887766",
+                "id": "wamid.HBgNNTUxMTk5OTg4Nzc2NhUCABIYFDNFQjA4RkQ4NjU2RDZEQ0ZBOTQAA",
+                "timestamp": "1741564800",
+                "type": "text",
+                "text": {
+                  "body": "Oi"
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ],
+
+  "_examples": {
+    "_note": "Alternative message types the bot may receive. The Message Parser node handles 'text' only by default and sends an informational reply for all other types.",
+
+    "audio_message": {
+      "from": "5511999887766",
+      "id": "wamid.AUDIO_EXAMPLE",
+      "timestamp": "1741564900",
+      "type": "audio",
+      "audio": {
+        "mime_type": "audio/ogg; codecs=opus",
+        "sha256": "examplehash",
+        "id": "media_id_here",
+        "voice": true
+      }
+    },
+
+    "image_message": {
+      "from": "5511999887766",
+      "id": "wamid.IMAGE_EXAMPLE",
+      "timestamp": "1741564950",
+      "type": "image",
+      "image": {
+        "caption": "Segue a foto do problema",
+        "mime_type": "image/jpeg",
+        "sha256": "examplehash",
+        "id": "media_id_here"
+      }
+    },
+
+    "location_message": {
+      "from": "5511999887766",
+      "id": "wamid.LOCATION_EXAMPLE",
+      "timestamp": "1741565000",
+      "type": "location",
+      "location": {
+        "latitude": -23.5505,
+        "longitude": -46.6333,
+        "name": "São Paulo, SP",
+        "address": "Av. Paulista, 1000 - Bela Vista, São Paulo - SP"
+      }
+    },
+
+    "webhook_verification_get": {
+      "_note": "This is NOT a POST body — it is a GET request from Meta to verify your webhook. n8n handles this automatically via the Webhook node query parameters.",
+      "hub.mode": "subscribe",
+      "hub.verify_token": "your-verify-token-here",
+      "hub.challenge": "1158201444"
+    }
+  },
+
+  "_field_reference": {
+    "object": "Always 'whatsapp_business_account' for WhatsApp webhooks",
+    "entry[0].id": "Your WhatsApp Business Account ID (WABA ID) — found in Meta Business Manager",
+    "entry[0].changes[0].value.metadata.display_phone_number": "The phone number displayed to users (human-readable format)",
+    "entry[0].changes[0].value.metadata.phone_number_id": "The numeric phone number ID — REQUIRED when sending replies via the API",
+    "entry[0].changes[0].value.contacts[0].profile.name": "The display name of the sender as stored in their WhatsApp profile",
+    "entry[0].changes[0].value.contacts[0].wa_id": "The sender's phone number in international format without '+' (e.g., 5511999887766 for +55 11 99988-7766)",
+    "entry[0].changes[0].value.messages[0].from": "Same as wa_id — the sender's phone number",
+    "entry[0].changes[0].value.messages[0].id": "Unique message ID (wamid) — used for sending read receipts or referencing the message",
+    "entry[0].changes[0].value.messages[0].timestamp": "Unix timestamp (seconds) of when the message was sent",
+    "entry[0].changes[0].value.messages[0].type": "Message type: 'text', 'audio', 'image', 'video', 'document', 'location', 'sticker', 'reaction', 'contacts'",
+    "entry[0].changes[0].value.messages[0].text.body": "The actual text content of the message — this is what the bot reads and responds to"
+  }
+}

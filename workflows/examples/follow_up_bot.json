@@ -1,0 +1,107 @@
+{
+  "_description": "Follow-up workflow — triggered manually or via webhook to send a follow-up WhatsApp message to a specific lead. Import this into n8n alongside the main bot workflow.",
+  "name": "WhatsApp Follow-up Sender",
+  "nodes": [
+    {
+      "id": "followup-webhook-trigger",
+      "name": "Follow-up Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "path": "whatsapp-followup",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "followup-trigger-01"
+    },
+    {
+      "id": "followup-validate",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "// Validate required fields from the incoming webhook payload\nconst body = $input.first().json.body || $input.first().json;\n\nconst phone = body.phone || body.to;\nconst message = body.message;\nconst company = body.company || 'nossa empresa';\n\nif (!phone) throw new Error('Missing required field: phone');\nif (!message) throw new Error('Missing required field: message');\n\n// Normalize phone number (remove non-digits, ensure country code)\nconst normalized = phone.replace(/\\D/g, '');\n\nreturn [{ json: { phone: normalized, message, company } }];"
+      }
+    },
+    {
+      "id": "followup-send",
+      "name": "Send Follow-up Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.WHATSAPP_API_URL}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.WHATSAPP_ACCESS_TOKEN}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "JSON",
+              "value": "={\"messaging_product\":\"whatsapp\",\"to\":\"{{$json.phone}}\",\"type\":\"text\",\"text\":{\"body\":\"{{$json.message}}\"}}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "followup-respond",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"phone\": \"{{$('Validate Input').item.json.phone}}\", \"sentAt\": \"{{new Date().toISOString()}}\"}"
+      }
+    },
+    {
+      "id": "followup-error",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 480],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 400,
+        "responseBody": "={\"success\": false, \"error\": \"{{$json.message}}\"}"
+      }
+    }
+  ],
+  "connections": {
+    "Follow-up Trigger": {
+      "main": [[{ "node": "Validate Input", "type": "main", "index": 0 }]]
+    },
+    "Validate Input": {
+      "main": [[{ "node": "Send Follow-up Message", "type": "main", "index": 0 }]]
+    },
+    "Send Follow-up Message": {
+      "main": [[{ "node": "Respond Success", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Send a follow-up WhatsApp message to a lead. POST to /webhook/whatsapp-followup with: { phone, message, company }",
+    "usage": "POST https://your-n8n.app.n8n.cloud/webhook/whatsapp-followup\nBody: { \"phone\": \"5511999887766\", \"message\": \"Olá! Ainda tem interesse nos nossos serviços?\", \"company\": \"Clínica Saúde Total\" }"
+  }
+}
