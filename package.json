@@ -1,0 +1,27 @@
+{
+  "name": "n8n-whatsapp-lead-automation",
+  "version": "1.0.0",
+  "description": "Sistema de qualificação de leads via WhatsApp usando n8n",
+  "main": "generator/generateWorkflow.js",
+  "scripts": {
+    "generate": "node generator/generateWorkflow.js",
+    "validate": "node generator/workflowValidator.js",
+    "test": "node --test tests/validator.test.js tests/generator.test.js",
+    "test:validator": "node --test tests/validator.test.js",
+    "test:generator": "node --test tests/generator.test.js",
+    "import": "bash scripts/importWorkflow.sh",
+    "deploy": "bash scripts/deployWorkflow.sh"
+  },
+  "keywords": [
+    "n8n",
+    "whatsapp",
+    "lead-automation",
+    "workflow",
+    "automation"
+  ],
+  "author": "Lorum Tech",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
