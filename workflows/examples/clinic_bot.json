@@ -1,0 +1,752 @@
+{
+  "name": "WhatsApp Lead Qualification — Clínica Saúde Total",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "={{$json[\"httpMethod\"] || \"POST\"}}",
+        "path": "whatsapp-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "whatsapp-lead-webhook-01"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "method-check-get",
+              "leftValue": "={{$json[\"headers\"][\"x-http-method\"] || $json[\"method\"] || \"POST\"}}",
+              "rightValue": "GET",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Method Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{$json[\"query\"][\"hub.challenge\"] || \"\"}}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Verify Challenge Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        680,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────\n// MESSAGE PARSER — Valida e extrai dados do payload WhatsApp\n// Resiliência: rejeita payloads grandes, tipos inválidos, JSON malformado\n// ─────────────────────────────────────────────────────────\n\nconst MAX_PAYLOAD_BYTES = 65536; // 64KB\nconst SUPPORTED_TYPES = ['text'];\nconst GREETING_WORDS = [\n  'oi', 'olá', 'ola', 'hello', 'hi',\n  'bom dia', 'boa tarde', 'boa noite',\n  'início', 'inicio', 'começar', 'comecar',\n  'start', 'menu'\n];\n\nconst body = $input.first().json;\n\n// Guard: tamanho do payload\nconst payloadSize = JSON.stringify(body).length;\nif (payloadSize > MAX_PAYLOAD_BYTES) {\n  console.error(`[MessageParser] Payload rejeitado: ${payloadSize} bytes (máx: ${MAX_PAYLOAD_BYTES})`);\n  return [{ json: { valid: false, error: 'PAYLOAD_TOO_LARGE', size: payloadSize } }];\n}\n\n// Guard: estrutura do WhatsApp Business API\ntry {\n  const entry = body?.entry?.[0];\n  const change = entry?.changes?.[0];\n  const value = change?.value;\n  const messageObj = value?.messages?.[0];\n\n  // Ignorar silenciosamente status updates (delivered, read, etc.)\n  if (!messageObj && value?.statuses) {\n    return [{ json: { valid: false, error: 'STATUS_UPDATE', ignore: true } }];\n  }\n\n  if (!messageObj) {\n    return [{ json: { valid: false, error: 'NO_MESSAGE_IN_PAYLOAD' } }];\n  }\n\n  const msgType = messageObj.type;\n  const from = messageObj.from;\n  const timestamp = messageObj.timestamp;\n  const messageId = messageObj.id;\n  const waBusinessId = entry?.id;\n\n  // Guard: tipo de mensagem não suportado\n  if (!SUPPORTED_TYPES.includes(msgType)) {\n    return [{ json: {\n      valid: false,\n      error: 'UNSUPPORTED_MESSAGE_TYPE',\n      messageType: msgType,\n      from,\n      waBusinessId\n    }}];\n  }\n\n  const text = messageObj.text?.body?.trim();\n\n  // Guard: texto vazio\n  if (!text) {\n    return [{ json: { valid: false, error: 'EMPTY_TEXT', from } }];\n  }\n\n  // Detecta saudação\n  const lowerText = text.toLowerCase();\n  const isGreeting = GREETING_WORDS.some(w => lowerText.includes(w));\n\n  return [{ json: {\n    valid: true,\n    from,\n    text,\n    messageType: msgType,\n    timestamp,\n    messageId,\n    waBusinessId,\n    isGreeting\n  }}];\n\n} catch (err) {\n  console.error('[MessageParser] Erro ao parsear payload:', err.message);\n  return [{ json: { valid: false, error: 'PARSE_ERROR', message: err.message } }];\n}"
+      },
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Message Parser",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "validity-check",
+              "leftValue": "={{$json[\"valid\"]}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "name": "Message Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{$env.WHATSAPP_PHONE_NUMBER_ID}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.WHATSAPP_ACCESS_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{$json[\\\"from\\\"]}}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"Desculpe, no momento só consigo processar mensagens de texto. Por favor, envie sua dúvida em texto. 😊\"\n  }\n}",
+        "options": {
+          "timeout": 10000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "name": "Send Unsupported Type Fallback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────\n// INTENT ROUTER — Determina a intenção baseada no estado da sessão\n// Estado persistido via campo sessionState no payload\n// ─────────────────────────────────────────────────────────\n\nconst data = $input.first().json;\nconst SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos\n\n// Estado da sessão: em produção, persistir em banco de dados/Redis\n// Aqui usamos o campo sessionData passado pelo fluxo para simplicidade do template\nconst sessionData = data.sessionData || {};\nconst lastActivity = sessionData.lastActivity || 0;\nconst now = Date.now();\n\n// Verifica timeout de sessão\nconst sessionExpired = (now - lastActivity) > SESSION_TIMEOUT_MS;\n\nlet intent;\n\nif (data.isGreeting || !sessionData.state || sessionExpired) {\n  intent = 'greeting';\n  sessionData.state = 'GREETING_SENT';\n  sessionData.answers = {};\n} else if (sessionData.state === 'COMPLETE') {\n  intent = 'complete';\n} else if (['Q1','Q2','Q3','Q4','Q5','GREETING_SENT'].includes(sessionData.state)) {\n  intent = 'qualifying';\n} else {\n  intent = 'unknown';\n}\n\nsessionData.lastActivity = now;\n\nreturn [{ json: {\n  ...data,\n  intent,\n  sessionData\n}}];"
+      },
+      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "name": "Intent Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json[\"intent\"]}}",
+                    "rightValue": "greeting",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "greeting"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json[\"intent\"]}}",
+                    "rightValue": "qualifying",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "qualifying"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json[\"intent\"]}}",
+                    "rightValue": "complete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "complete"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "a1b2c3d4-0008-0008-0008-000000000008",
+      "name": "Intent Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{$env.WHATSAPP_PHONE_NUMBER_ID}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.WHATSAPP_ACCESS_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{$json[\\\"from\\\"]}}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"Olá! Bem-vindo(a) à Clínica Saúde Total. Estamos aqui para cuidar da sua saúde! 💚\\n\\nNossos serviços:\\nConsulta Clínica Geral,Pediatria,Ginecologia,Ortopedia,Check-up Completo\\n\\nPara começar, me diga: qual é o seu *nome completo*?\"\n  }\n}",
+        "options": {
+          "timeout": 10000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "a1b2c3d4-0009-0009-0009-000000000009",
+      "name": "Send Welcome Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────\n// LEAD QUALIFICATION — Máquina de estados de perguntas\n// Registra resposta anterior e determina próxima pergunta\n// ─────────────────────────────────────────────────────────\n\nconst QUESTIONS = [\n  { key: 'name',           state: 'Q1', question: 'Qual é o seu *nome completo*?' },\n  { key: 'contact_phone',  state: 'Q2', question: 'Qual o melhor *número para contato*? (pode ser este mesmo)' },\n  { key: 'service',        state: 'Q3', question: 'Qual serviço você tem interesse?\\nOpções: Consulta Clínica Geral,Pediatria,Ginecologia,Ortopedia,Check-up Completo' },\n  { key: 'budget',         state: 'Q4', question: 'Qual seu *orçamento aproximado* para este serviço?' },\n  { key: 'timeline',       state: 'Q5', question: 'Quando você gostaria de *começar*?' }\n];\n\nconst data = $input.first().json;\nconst sessionData = data.sessionData || {};\nconst answers = sessionData.answers || {};\nconst currentState = sessionData.state || 'GREETING_SENT';\n\n// Encontra a pergunta que corresponde ao estado atual\nconst currentQuestionIndex = QUESTIONS.findIndex(q => q.state === currentState);\nconst previousQuestionIndex = currentQuestionIndex - 1;\n\n// Salva a resposta da pergunta anterior (se existir)\nif (previousQuestionIndex >= 0 && data.text) {\n  const prevQ = QUESTIONS[previousQuestionIndex];\n  answers[prevQ.key] = data.text;\n}\n\n// Se estava em GREETING_SENT, começa do zero\nif (currentState === 'GREETING_SENT' && data.text) {\n  answers['name'] = data.text;\n}\n\n// Determina próxima pergunta\nconst answeredCount = Object.keys(answers).length;\nconst nextQuestion = QUESTIONS[answeredCount];\n\nlet nextState;\nlet qualificationComplete = false;\nlet leadData = null;\n\nif (!nextQuestion) {\n  // Todas as perguntas respondidas\n  nextState = 'COMPLETE';\n  qualificationComplete = true;\n  leadData = {\n    company: 'Clínica Saúde Total',\n    whatsapp: data.from,\n    timestamp: new Date().toISOString(),\n    status: 'novo',\n    ...answers\n  };\n} else {\n  nextState = nextQuestion.state;\n}\n\nsessionData.state = nextState;\nsessionData.answers = answers;\nsessionData.lastActivity = Date.now();\n\nreturn [{ json: {\n  ...data,\n  sessionData,\n  nextQuestion: nextQuestion?.question || null,\n  qualificationComplete,\n  leadData,\n  answers\n}}];"
+      },
+      "id": "a1b2c3d4-0010-0010-0010-000000000010",
+      "name": "Lead Qualification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{$env.WHATSAPP_PHONE_NUMBER_ID}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.WHATSAPP_ACCESS_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{$json[\\\"from\\\"]}}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{$json[\\\"nextQuestion\\\"]}}\"\n  }\n}",
+        "options": {
+          "timeout": 10000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "a1b2c3d4-0011-0011-0011-000000000011",
+      "name": "Send Next Question",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{$env.GOOGLE_SHEETS_SPREADSHEET_ID}}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{$env.GOOGLE_SHEETS_SHEET_NAME || \"Leads\"}}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{$json[\"leadData\"][\"timestamp\"]}}",
+            "Empresa": "={{$json[\"leadData\"][\"company\"]}}",
+            "WhatsApp": "={{$json[\"leadData\"][\"whatsapp\"]}}",
+            "Nome": "={{$json[\"leadData\"][\"name\"]}}",
+            "Telefone Contato": "={{$json[\"leadData\"][\"contact_phone\"]}}",
+            "Servico Interesse": "={{$json[\"leadData\"][\"service\"]}}",
+            "Orcamento": "={{$json[\"leadData\"][\"budget\"]}}",
+            "Prazo": "={{$json[\"leadData\"][\"timeline\"]}}",
+            "Status": "={{$json[\"leadData\"][\"status\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "id": "a1b2c3d4-0012-0012-0012-000000000012",
+      "name": "Lead Storage — Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1780,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AGENT_NOTIFICATION_URL}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"event\": \"new_qualified_lead\",\n  \"company\": \"Clínica Saúde Total\",\n  \"timestamp\": \"{{$json[\\\"leadData\\\"][\\\"timestamp\\\"]}}\",\n  \"lead\": {\n    \"whatsapp\": \"{{$json[\\\"leadData\\\"][\\\"whatsapp\\\"]}}\",\n    \"name\": \"{{$json[\\\"leadData\\\"][\\\"name\\\"]}}\",\n    \"contact_phone\": \"{{$json[\\\"leadData\\\"][\\\"contact_phone\\\"]}}\",\n    \"service_interest\": \"{{$json[\\\"leadData\\\"][\\\"service\\\"]}}\",\n    \"budget\": \"{{$json[\\\"leadData\\\"][\\\"budget\\\"]}}\",\n    \"timeline\": \"{{$json[\\\"leadData\\\"][\\\"timeline\\\"]}}\"\n  }\n}",
+        "options": {
+          "timeout": 8000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      },
+      "id": "a1b2c3d4-0013-0013-0013-000000000013",
+      "name": "Agent Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{$env.WHATSAPP_PHONE_NUMBER_ID}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.WHATSAPP_ACCESS_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{$json[\\\"from\\\"]}}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"Perfeito, {{$json[\\\"answers\\\"][\\\"name\\\"]}}! Recebi todas as suas informações.\\nNossa equipe da *Clínica Saúde Total* entrará em contato em breve pelo número {{$json[\\\"answers\\\"][\\\"contact_phone\\\"]}}.\\nAté logo! 👋\"\n  }\n}",
+        "options": {
+          "timeout": 10000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "a1b2c3d4-0014-0014-0014-000000000014",
+      "name": "Send Completion Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{$env.WHATSAPP_PHONE_NUMBER_ID}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.WHATSAPP_ACCESS_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{$json[\\\"from\\\"]}}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"Não entendi sua mensagem. Digite *menu* para ver as opções disponíveis.\"\n  }\n}",
+        "options": {
+          "timeout": 10000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "a1b2c3d4-0015-0015-0015-000000000015",
+      "name": "Send Unknown Intent Fallback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"ok\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a1b2c3d4-0016-0016-0016-000000000016",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Method Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Method Router": {
+      "main": [
+        [
+          {
+            "node": "Verify Challenge Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Parser": {
+      "main": [
+        [
+          {
+            "node": "Message Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Valid?": {
+      "main": [
+        [
+          {
+            "node": "Intent Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Unsupported Type Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Intent Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Switch": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lead Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Completion Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Unknown Intent Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Qualification": {
+      "main": [
+        [
+          {
+            "node": "Send Next Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Completion Message": {
+      "main": [
+        [
+          {
+            "node": "Lead Storage — Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Storage — Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Agent Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Message": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Next Question": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Unsupported Type Fallback": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Unknown Intent Fallback": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    {
+      "name": "whatsapp"
+    },
+    {
+      "name": "lead-qualification"
+    },
+    {
+      "name": "template"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "template",
+    "generatedAt": "2026-03-09T21:58:51.830Z",
+    "generatedBy": "generateWorkflow.js",
+    "companyName": "Clínica Saúde Total",
+    "templateVersion": "1.0.0"
+  },
+  "id": "cl-nica-sa-de-total-860b0c11",
+  "versionId": "cadd90c2-29fd-4434-b4ab-602d6b055cd5"
+}
