@@ -1,6 +1,16 @@
 # Guia Completo de Configuração
 ## WhatsApp Lead Automation — Do Zero ao Funcionando
 
+> **Você é cliente e recebeu um arquivo JSON?**
+> Não precisa deste guia. Use o [guia-cliente.md](guia-cliente.md) — ele é mais curto e cobre exatamente o que você precisa.
+>
+> **Você é vendedor e quer entender como gerar e entregar workflows?**
+> Leia o [guia-vendedor.md](guia-vendedor.md).
+>
+> Este guia é para configuração técnica avançada (setup do zero sem o Configurador).
+
+---
+
 > Esse guia foi escrito para quem nunca mexeu com automação. Siga cada passo com calma — você consegue!
 
 ---

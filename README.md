@@ -6,17 +6,26 @@
 
 ## COMECE AQUI
 
-Se você acabou de comprar esse produto, siga este caminho:
+### Sou cliente (comprei o produto e recebi um arquivo JSON)
 
-**1. Leia o guia completo em português:**
-[docs/guia-passo-a-passo.md](docs/guia-passo-a-passo.md)
+Siga o guia de instalação de 30 minutos — sem terminal, sem programação:
 
-**2. Ou use o assistente interativo (recomendado):**
-```bash
-bash scripts/configurar.sh
-```
+**[docs/guia-cliente.md](docs/guia-cliente.md)**
 
-**3. Ficou com dúvidas?**
+---
+
+### Sou vendedor (quero gerar bots para meus clientes)
+
+1. Importe o Configurador no seu n8n: `workflows/setup/configurador.json`
+2. Ative o workflow e acesse o formulário
+3. Preencha os dados do cliente → copie o JSON gerado → entregue ao cliente
+
+Guia completo do vendedor: **[docs/guia-vendedor.md](docs/guia-vendedor.md)
+
+---
+
+### Ficou com dúvidas?
+
 [docs/faq.md](docs/faq.md)
 
 ---
